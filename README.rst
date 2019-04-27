@@ -1,4 +1,4 @@
-judi - Bioinformatics Pipeline: _Just Do It_
+judi - Bioinformatics Pipeline: *Just Do It*
 ============================================
 
 *judi* comes from the idea of bringing the power and efficiency of *doit* to
@@ -80,7 +80,7 @@ Run from terminal::
 Project Details
 ===============
 
- - Website & docs - http://pydoit.org
+ - Website & docs - `https://judi.readthedocs.io <https://judi-ncbi.readthedocs.io>`
  - Project management on github - https://github.com/ncbi/JUDI
 
 License
