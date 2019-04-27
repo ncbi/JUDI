@@ -1,13 +1,8 @@
-# judi - Bioinformatics Pipeline: _Just Do It_
+judi - Bioinformatics Pipeline: _Just Do It_
+============================================
 
-A pip package for JUDI.
-
-
-doit - automation tool
-======================
-
-*doit* comes from the idea of bringing the power of build-tools to
-execute any kind of task
+*judi* comes from the idea of bringing the power and efficiency of *doit* to
+execute any kind of task under many combinations of parameter settings.
 
 
 Sample Code
@@ -15,175 +10,113 @@ Sample Code
 
 Define functions returning python dict with task's meta-data.
 
-Snippet from `tutorial <http://pydoit.org/tutorial_1.html>`_::
+Snippet from `tutorial <https://judi.readthedocs.io/tutorial_1.html>`_::
 
-  def task_imports():
-      """find imports from a python module"""
-      for name, module in PKG_MODULES.by_name.items():
-          yield {
-              'name': name,
-              'file_dep': [module.path],
-              'actions': [(get_imports, (PKG_MODULES, module.path))],
-          }
+    from judi import File, Task, add_param, combine_csvs
 
-  def task_dot():
-      """generate a graphviz's dot graph from module imports"""
-      return {
-          'targets': ['requests.dot'],
-          'actions': [module_to_dot],
-          'getargs': {'imports': ('imports', 'modules')},
-          'clean': True,
-      }
+    add_param('100 101 102 103'.split(), 'sample')
+    add_param('1 2'.split(), 'group')
 
-  def task_draw():
-      """generate image from a dot file"""
-      return {
-          'file_dep': ['requests.dot'],
-          'targets': ['requests.png'],
-          'actions': ['dot -Tpng %(dependencies)s -o %(targets)s'],
-          'clean': True,
-      }
+    REF = 'hg_refs/hg19.fa'
+    path_gen = lambda x: '{}_{}.fq'.format(x['sample'],x['group'])
+
+    class AlignFastq(Task):
+      inputs = {'reads': File('orig_fastq', path = path_gen)}
+      targets = {'sai': File('aln.sai')}
+      actions = [('bwa aln {} {} > {}', [REF,'$reads','$sai'])]
+
+    class CreateBam(Task):
+      mask = ['group']
+      inputs = {'reads': AlignFastq.inputs['reads'],
+                'sai': AlignFastq.targets['sai']}
+      targets = {'bam': File('aln.bam', mask = mask)}
+      actions = [('bwa sampe {} {} {} | samtools view -Sbh - | samtools sort - > {}', [REF,'$sai','$reads','$bam'])]
+
+    class GetCoverage(Task):
+      mask = ['group']
+      inputs = {'bam': CreateBam.targets['bam']}
+      targets = {'cov': File('cov.csv', mask = mask)}
+      actions = [('(echo val; samtools rmdup {} - | samtools mpileup - | cut -f4) > {}', ['$bam','$cov'])]
+
+    class CombineCoverage(Task):
+      mask = ['group', 'sample']
+      inputs = {'cov': GetCoverage.targets['cov']}
+      targets = {'csv': File('combined.csv', mask = mask),
+               'pdf': File('pltcov.pdf', mask = mask, root = '.')}
+      actions = [(combine_csvs, ['#cov', '#csv']),
+                 ("""echo "library(ggplot2); pdf('{}')
+                  ggplot(read.csv('{}'), aes(x = val)) +
+                  geom_density(aes(color = factor(sample)))"\
+                  | R --vanilla""", ['$pdf','$csv'])]
 
 
 Run from terminal::
 
   $ doit list
-  dot       generate a graphviz's dot graph from module imports
-  draw      generate image from a dot file
-  imports   find imports from a python module
+  AlignFastq
+  CombineCoverage
+  CreateBam
+  GetCoverage
   $ doit
-  .  imports:requests.models
-  .  imports:requests.__init__
-  .  imports:requests.help
-  (...)
-  .  dot
-  .  draw
+  . AlignFastq:group~1,sample~100
+  . AlignFastq:group~2,sample~100
+  . AlignFastq:group~1,sample~101
+  . AlignFastq:group~2,sample~101
+  . AlignFastq:group~1,sample~102
+  . AlignFastq:group~2,sample~102
+  . AlignFastq:group~1,sample~103
+  . AlignFastq:group~2,sample~103
+  . CreateBam:sample~100
+  . CreateBam:sample~102
+  . CreateBam:sample~103
+  . CreateBam:sample~101
+  . GetCoverage:sample~100
+  . GetCoverage:sample~102
+  . GetCoverage:sample~103
+  . GetCoverage:sample~101
+  . CombineCoverage:
 
 
 Project Details
 ===============
 
  - Website & docs - http://pydoit.org
- - Project management on github - https://github.com/pydoit/doit
- - Discussion group - https://groups.google.com/forum/#!forum/python-doit
- - News/twitter - https://twitter.com/py_doit
- - Plugins, extensions and projects based on doit - https://github.com/pydoit/doit/wiki/powered-by-doit
+ - Project management on github - https://github.com/ncbi/JUDI
 
-license
+License
 =======
 
 The MIT License
-Copyright (c) 2008-2018 Eduardo Naufel Schettino
+Copyright (c) 2019-2020 Soumitra Pal
 
 see LICENSE file
 
 
-developers / contributors
-==========================
-
-see AUTHORS file
-
-
-install
+Install
 =======
 
-*doit* is tested on python 3.4 to 3.6.
-
-The last version supporting python 2 is version 0.29.
+*judi* is tested on python 3.6.
 
 ::
 
- $ pip install doit
+ $ pip install judi
 
 
-dependencies
+Dependencies
 =============
 
-- cloudpickle
-- pyinotify (linux)
-- macfsevents (mac)
+- doit
 
-Tools required for development:
-
-- git * VCS
-- py.test * unit-tests
-- coverage * code coverage
-- sphinx * doc tool
-- pyflakes * syntax checker
-- doit-py * helper to run dev tasks
-
-
-development setup
-==================
-
-The best way to setup an environment to develop *doit* itself is to
-create a virtualenv...
-
-::
-
-  doit$ virtualenv dev
-  doit$ source dev/bin/activate
-
-install ``doit`` as "editable", and add development dependencies
-from `dev_requirements.txt`::
-
-  (dev) doit$ pip install --editable .
-  (dev) doit$ pip install --requirement dev_requirements.txt
-
-
-
-tests
-=======
-
-Use py.test - http://pytest.org
-
-::
-
-  $ py.test
-
-
-
-documentation
+Documentation
 =============
 
-``doc`` folder contains ReST documentation based on Sphinx.
+``docs`` folder contains ReST documentation based on Sphinx.
 
 ::
 
- doc$ make html
+ docs$ make html
 
-They are the base for creating the website. The only difference is
-that the website includes analytics tracking.
-To create it (after installing *doit*)::
-
- $ doit website
-
-
-
-spell checking
---------------
-
-All documentation is spell checked using the task `spell`::
-
-  $ doit spell
-
-It is a bit annoying that code snippets and names always fails the check,
-these words must be added into the file `doc/dictionary.txt`.
-
-The spell checker currently uses `hunspell`, to install it on debian based
-systems install the hunspell package: `apt-get install hunspell`.
-
-
-profiling
----------
-
-::
-
-  python -m cProfile -o output.pstats `which doit` list
-
-  gprof2dot -f pstats output.pstats | dot -Tpng -o output.png
-
-contributing
+Contributing
 ==============
 
 On github create pull requests using a named feature branch.
