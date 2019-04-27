@@ -1,4 +1,4 @@
-judi - Bioinformatics Pipeline: *Just Do It*
+JUDI - Bioinformatics Pipeline: *Just Do It*
 ============================================
 
 *judi* comes from the idea of bringing the power and efficiency of *doit* to
