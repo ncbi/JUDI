@@ -40,9 +40,9 @@ Easy plug-and-play
    :hidden:
    :caption: Getting Started
 
-   intro/install-judi
-   intro/build-pipeline
-   intro/execute-pipeline
+   install-judi
+   build-pipeline
+   execute-pipeline
 
 
 .. _user-docs:
@@ -51,10 +51,9 @@ Easy plug-and-play
    :maxdepth: 2
    :caption: User Documentation
 
-   features/param-db
-   features/judi-files
-   features/judi-tasks
-   features/doit
+   param-db
+   judi-files
+   judi-tasks
 
 
 Indices and tables
