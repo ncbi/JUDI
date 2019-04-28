@@ -33,7 +33,7 @@ Easy plug-and-play
 .. _JUDI: http://judi.readthedocs.org/
 
 
-.. _get-started
+.. _get-started:
 
 .. toctree::
    :maxdepth: 2

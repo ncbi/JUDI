@@ -1,5 +1,5 @@
-JUDI File with Associated Parameter Database
-============================================
+JUDI File
+=========
 
 .. meta::
    :description lang=en: Get started creating software pipelines using JUDI.

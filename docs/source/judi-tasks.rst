@@ -1,5 +1,5 @@
-JUDI Task with Associated Parameter Database
-============================================
+JUDI Task
+=========
 
 .. meta::
    :description lang=en: Get started creating software pipelines using JUDI.
