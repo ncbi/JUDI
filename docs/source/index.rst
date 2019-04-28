@@ -37,7 +37,6 @@ Easy plug-and-play
 
 .. toctree::
    :maxdepth: 2
-   :hidden:
    :caption: Getting Started
 
    install-judi
