@@ -12,8 +12,6 @@ Define functions returning python dict with task's meta-data.
 
 Snippet from `tutorial <https://judi.readthedocs.io/tutorial_1.html>`_::
 
-.. code-block:: python
-
     from judi import File, Task, add_param, combine_csvs
 
     add_param('100 101 102 103'.split(), 'sample')
