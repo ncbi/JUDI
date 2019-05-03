@@ -1,5 +1,5 @@
-Build Software Pipelines using JUDI
-===================================
+Build Software Pipeline
+=======================
 
 .. meta::
    :description lang=en: Get started creating software pipelines using JUDI.

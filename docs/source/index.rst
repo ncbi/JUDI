@@ -11,23 +11,22 @@ JUDI: Software Pipeline, *Just Do It*
 
 
 `JUDI`_ simplifies building and executing a software pipeline
-under different parameter settings by automating efficient execution
+under different parameter settings by automating an efficient execution
 of the pipeline across the settings.
 
 Consolidated specification of parameter settings 
-    JUDI provides an easy way to specify all possible parameter settings
-    under which the pipeline needs to be excuted.
+    JUDI provides an easy and efficient way to specify all possible settings of the parameters
+    which the pipeline needs to be executed for.
 
 Files and tasks independent from parameter settings
-    For each file or a task, a user just specifies the parameters it depends upon
-    and then builds the pipeline as if there were no parameters at all.
-    JUDI makes sure there are seperate instances of the file or the task
-    for each setting of the parameters, creates appropriate association between
-    the file instances and the task instances, and automates an efficient execution
-    of the task instances based on their dependency.
+    For each file/task, a user of JUDI just specifies the parameters the file/task depends upon
+    and then builds the pipeline as if there were no parameters at all.  JUDI makes sure there
+    are separate instances of the file/task for each setting of the parameters, creates
+    appropriate association between the file instances and the task instances, and automates
+    an efficient execution of the task instances based on their dependency on other tasks.
 
 Easy plug-and-play
-    By decoupling parameter settings from files and tasks, JUDI enables 
+    By decoupling parameter settings from files and tasks, JUDI enables an easy
     plug and play of different stages of the pipeline.
 
 .. _JUDI: http://judi.readthedocs.org/

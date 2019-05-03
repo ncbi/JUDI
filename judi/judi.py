@@ -76,6 +76,23 @@ def combine_csvs(big, small):
   combine_csvs_base(params, infiles, outfile)
 
 
+from PyPDF2 import PdfFileMerger
+
+def merge_pdfs_base(infiles, outfile):
+  merger = PdfFileMerger()
+  for pdf in infiles:
+    merger.append(open(pdf, 'rb'))
+  with open(outfile, 'wb') as fout:
+    merger.write(fout)
+
+
+def merge_pdfs(big, small):
+  infiles = big['path'].tolist()
+  outfile = small['path'].tolist()[0]
+  merge_pdfs_base(infiles, outfile)
+
+
+
 class File(object):
   file_db = pd.DataFrame(columns = ['name', 'path'])
   def __init__(self, name, param = pd.DataFrame(), mask = None, path = None, root = './judi_files'):
@@ -124,6 +141,8 @@ class Task(object):
     kw = {k:v for k,v in kw.items() if k in ['param', 'mask', 'inputs', 'targets', 'run', 'actions']}
     kw['doc'] = cls.__doc__
     kw['basename'] = cls.__name__ 
+    kw['clean'] = True 
+    kw['verbosity'] = 2 
 
     global JUDI_PARAM
     param = kw.pop('param') if 'param' in kw else JUDI_PARAM
@@ -134,14 +153,17 @@ class Task(object):
     targets = kw.pop('targets')
 
     cfg_cols = param.columns.tolist()
+    cfg_cols_wo_spl = list(filter(lambda x: x != 'JUDI', cfg_cols))
+    #print(list(cfg_cols_wo_spl))
 
     # For each input/target file f create D_{t,f} table
     # and merge the information to the param db
-    engroup = lambda x: pd.DataFrame({'dtf':[x.drop(cfg_cols, axis=1)]})
     for files in [inputs, targets]:
       for fkey in files.keys():
-        dtf = files[fkey].param.groupby(cfg_cols).apply(engroup).rename(columns={'dtf':fkey})
-        dtf.index = dtf.index.droplevel(len(cfg_cols))
+        grp_cols = list(filter(lambda x: x in cfg_cols, files[fkey].param.columns))
+        engroup = lambda x: pd.DataFrame({fkey:[x.drop(columns=grp_cols)]})
+        dtf = files[fkey].param.groupby(grp_cols).apply(engroup)
+        dtf.index = dtf.index.droplevel(len(grp_cols))
         dtf = dtf.reset_index()
         param = param.merge(dtf)
 
@@ -168,11 +190,15 @@ class Task(object):
                 plist = t[arg[1:]]['path'].tolist()
                 newargs.append(plist[0] if len(plist) == 1 else plist)
               elif arg[0] == '#':
-                newargs.append(t[arg[1:]])
+                if arg == '##':
+                  newargs.append(t[cfg_cols_wo_spl])
+                else:
+                  newargs.append(t[arg[1:]])
               else:
                 newargs.append(arg)
             else:
               newargs.append(arg)
+          #print(newargs)
           if isinstance(act, str):
             for i, v in enumerate(newargs):
               if isinstance(v, list):
@@ -181,6 +207,9 @@ class Task(object):
             newargs = []
           else:
             newact = act
+          #print("^^^^^^^ calling ^^^^^^")
+          #newact(*newargs)
+          #print("^^^^^^^ done ^^^^^^")
           actions += [(newact, newargs) if len(newargs) else (newact)]
         newkw['actions'] = actions
       if show_details:
@@ -190,4 +219,4 @@ class Task(object):
       yield newkw
 
 
-DOIT_CONFIG = {'verbosity': 2}
+DOIT_CONFIG = {'verbosity': 5}
