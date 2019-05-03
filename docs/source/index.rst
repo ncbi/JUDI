@@ -29,14 +29,13 @@ Easy plug-and-play
     By decoupling parameter settings from files and tasks, JUDI enables an easy
     plug and play of different stages of the pipeline.
 
-.. _JUDI: http://judi.readthedocs.org/
+.. _JUDI: http://pyjudi.readthedocs.org/
 
 
 .. _get-started:
 
 .. toctree::
    :maxdepth: 2
-   :hidden:
    :caption: Getting Started
 
    install-judi

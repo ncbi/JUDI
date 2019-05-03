@@ -80,7 +80,7 @@ Run from terminal::
 Project Details
 ===============
 
- - Website & docs - `https://judi.readthedocs.io <https://judi-ncbi.readthedocs.io>`
+ - Website & docs - https://pyjudi.readthedocs.io
  - Project management on github - https://github.com/ncbi/JUDI
 
 License
