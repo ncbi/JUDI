@@ -1,5 +1,5 @@
-Parameter Database
-==================
+Cleanup Files
+=============
 
 .. meta::
    :description lang=en: Get started creating software pipelines using JUDI.

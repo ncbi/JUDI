@@ -40,10 +40,9 @@ Easy plug-and-play
 
    install-judi
    build-pipeline
-   execute-pipeline
 
 
-.. _user-docs:
+.. _user_docs:
 
 .. toctree::
    :maxdepth: 2
@@ -52,6 +51,26 @@ Easy plug-and-play
    param-db
    judi-files
    judi-tasks
+
+.. _putting_together:
+
+.. toctree::
+   :maxdepth:2
+   :caption: Putting Together
+
+   example/pipeline
+   example/judi-code
+   example/run
+
+.. _advanced_use:
+
+.. toctree::
+   :maxdepth:3
+   :caption: Advanced Usage
+
+   list-tasks
+   clean-tasks
+   advanced
 
 
 Indices and tables

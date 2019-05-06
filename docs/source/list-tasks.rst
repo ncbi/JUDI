@@ -1,5 +1,5 @@
-Execute Software Pipeline Built using JUDI
-==========================================
+List Pipeline Stages
+====================
 
 .. meta::
    :description lang=en: Get started creating software pipelines using JUDI.

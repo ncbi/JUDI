@@ -13,8 +13,8 @@ JUDI has been tested using python 3.6 on Linux based systems.
 
 Assuming you have Python and pandas already, `install judi`_:
 
-.. prompt:: bash $
+.. code-block:: bash
 
-    pip install doit
-    pip install judi
+    $ pip install doit
+    $ pip install judi
 

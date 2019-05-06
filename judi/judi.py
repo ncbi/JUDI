@@ -128,9 +128,10 @@ def get_file_paths(pdb_row, file_key):
 
 
 class Task(object):
+  """Base Task"""
   @classmethod
   def create_doit_tasks(cls):
-    show_details = 1
+    show_details = 0
     if show_details:
       print(f"\n=================== Working on {cls} =============\n")
     if cls is Task:
