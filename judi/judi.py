@@ -1,8 +1,27 @@
+import sys
+print(sys.path)
 import pandas as pd
 
 JUDI_PARAM = pd.DataFrame({'JUDI': ['*']})
 
 def add_param(param_info, name = None):
+  """Add a parameter or a group of parameters in the global parameter database
+
+  Args:
+     param_info (list/dict/Pandas Series/DataFrame): Information about the parameter or group of parameters.
+     If not already so, param_info is converted to a pandas DataFrame and then it is added to the global
+     parameter database via a Cartesian product.
+
+  Kwargs:
+     name (str): Used if param_info is a list and denotes the name of the parameter.
+
+  Returns:
+     int.  The return code: 0 for success and 1 for error!
+
+  Raises:
+     None
+  """
+
   global JUDI_PARAM
   if isinstance(param_info, list):
     param_info = {name: param_info}
@@ -12,12 +31,15 @@ def add_param(param_info, name = None):
     param_info = pd.DataFrame([param_info])
   if not isinstance(param_info, pd.DataFrame):
     print("Error! input data must be a list, series or dataframe!!!")
-    exit(-1)
+    return 1
   JUDI_PARAM = JUDI_PARAM.assign(key=1).merge(param_info.assign(key=1), on='key', how='outer').drop('key', 1)
+  return 0
 
 
 def show_param_db():
-  print("JUDI_PARAM:\n", JUDI_PARAM)
+  """Print the global parameter database
+  """
+  print("Global param db:\n", JUDI_PARAM.drop('JUDI', 1))
 
 
 def copy_param_db():
