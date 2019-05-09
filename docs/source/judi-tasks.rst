@@ -20,52 +20,100 @@ Optional class variables:
 Parameter substitution in actions
 ---------------------------------
 
-In additions to the forms of DoIt actions, JUDI provides the following additional form:
+In additions to the forms of actions supported in DoIt, JUDI supports the following additional form:
 
 * (func, args): Here func could be a string or a callable and args is a list of arguments. When func is a str, it can have placeholders {} which are replaced by the elements of args. When func is a callable it must have only positional arguments provided through args. An element of args can have special strings which are replaced by values as shown in the following table:
 
-+-----------+----------------------------------------------------+
-|Value      | Substituted value                                  |
-+===========+====================================================+
-|'$x'       | List of paths for the instances of JUDI file 'x'   |
-|           | applicable to the current JUDI task instance.      |
-+-----------+----------------------------------------------------+
+.. list-table:: Argument substitution rules
+   :widths: 20 20 60
+   :header-rows: 1
+
+   * - arg
+     - case
+     - substituted value
+   * - '$x'
+     - 'x' is an input/target file
+     - | Blank separated list of paths for the instances of JUDI file
+       | 'x' applicable to the current JUDI task instance.                                       
+   * - '#x'
+     - 'x' is an input/target file
+     - | Parameter database associated with 'x'                                        
+   * - '#x'
+     - 'x' is a parameter
+     - | Value of parameter 'x'
+   * - '##'
+     - 
+     - | Python dictionary containing all parameters
+       | and their values
 
 
 Some examples
 -------------
 
-The following code snippet creates a global parameter database with two parameters W and X and then creates a file with a parameter database that masks parameter W in the global parameter database.
+The following code snippet ``dodo.py`` creates a global parameter database with two parameters W and X and then creates a task with a parameter database that masks parameter W in the global parameter database. Each of the task instances for parameter X then concatenates the input files for all possible values of W. Using the class variable actions, several parameter substitutions have been demonstrated.
 
 .. code-block:: python
-   :emphasize-lines: 7
-   :linenos:
 
-   from judi import add_param, show_param_db, File
-   
+   from judi import add_param, show_param_db, File, Task
    add_param("1 2".split(), 'W')
-   add_param("a b c".split(), 'X')
+   add_param("a b".split(), 'X')
    show_param_db()
    
-   f = File('test', mask = ['W'])
-   show_param_db(f.param)
+   class Test(Task):
+     mask = ['W']
+     inputs = {'foo': File('bar', path=lambda x: ''.join([x['X'], x['W']]) + '.txt')}
+     targets = {'zoo': File('combined.txt', mask = mask)}
+     actions = [('echo ">>" foo files: {}', ['$foo']),
+                ('echo ">>" foo param db:'),
+                (show_param_db, ['#foo']),
+                ('echo ">>" zoo files: {}', ['$zoo']),
+                ('echo ">>" zoo param db:'),
+                (show_param_db, ['#zoo']),
+                ('echo ">>" param X: {}', ['#X']),
+                ('echo ">>" All parameters:'),
+                (lambda x: print(x), ['##']),
+                ('cat {} > {}', ['$foo', '$zoo'])]
 
-The contents of the global parameter database and of the parameter database associated with the file are as follows:
+The output of ``doit -f dodo.py`` is shown below:
 
-.. code-block:: text
+.. code-block:: python
+   :emphasize-lines: 7, 23
 
    Global param db:
-      W  X
+       W  X
    0  1  a
    1  1  b
-   2  1  c
-   3  2  a
-   4  2  b
-   5  2  c
+   2  2  a
+   3  2  b
+   .  Test:X~a
+   >> foo files: a1.txt a2.txt
+   >> foo param db:
    Param db:
-      X  name                   path
-   0  a  test  ./judi_files/X~a/test
-   1  b  test  ./judi_files/X~b/test
-   2  c  test  ./judi_files/X~c/test
-
-More to be added ...
+       W name    path
+   1  1  bar  a1.txt
+   3  2  bar  a2.txt
+   >> zoo files: ./judi_files/X~a/combined.txt
+   >> zoo param db:
+   Param db:
+               name                           path
+   1  combined.txt  ./judi_files/X~a/combined.txt
+   >> param X: a
+   >> All parameters:
+   X    a
+   Name: 0, dtype: object
+   .  Test:X~b
+   >> foo files: b1.txt b2.txt
+   >> foo param db:
+   Param db:
+       W name    path
+   1  1  bar  b1.txt
+   3  2  bar  b2.txt
+   >> zoo files: ./judi_files/X~b/combined.txt
+   >> zoo param db:
+   Param db:
+               name                           path
+   1  combined.txt  ./judi_files/X~b/combined.txt
+   >> param X: b
+   >> All parameters:
+   X    b
+   Name: 1, dtype: object

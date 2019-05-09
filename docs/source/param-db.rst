@@ -6,7 +6,7 @@ Parameter Database
 
 The main distinguishing feature of JUDI is the use of parameter database which captures all the different settings of parameters that the pipeline being build can possibly be executed for. JUDI maintains a parameter database as a pandas dataframe. The columns indicate the parameters and the rows the settings of the parameters.
 
-In JUDI, each file and each task is associated with a parameter database. However, most of these databases are either the same or share many common parameters. Hence JUDI maintains a global parameter database and the parameter databases to individual file or task is specified as a list of masked parameters.
+In JUDI, each file and each task is associated with a parameter database. However, most of these databases are either the same or share many common parameters. Hence JUDI maintains a global parameter database and the parameter databases to individual file or task is specified through a list of masked parameters.
 
 The global parameter database is populated using the following function:
 

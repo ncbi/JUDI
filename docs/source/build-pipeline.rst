@@ -23,7 +23,7 @@ For each of the two files, the first stage of the pipeline computes
 the number of lines, words and characters and stores in a comma-separated file.
 
 The second stage combines the two comma-separated files into a single
-comma-separated file.
+comma-separated file with an extra field to indicate the source.
 
 Build pipeline
 --------------

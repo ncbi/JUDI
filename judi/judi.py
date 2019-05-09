@@ -1,5 +1,3 @@
-import sys
-print(sys.path)
 import pandas as pd
 
 JUDI_PARAM = pd.DataFrame({'JUDI': ['*']})
@@ -41,8 +39,10 @@ def show_param_db(param_db=None):
   """
   if not isinstance(param_db, pd.DataFrame):
     print("Global param db:\n", JUDI_PARAM.drop('JUDI', 1))
-  else:
+  elif 'JUDI' in param_db.columns:
     print("Param db:\n", param_db.drop('JUDI', 1))
+  else:
+    print("Param db:\n", param_db)
 
 
 def copy_param_db():
@@ -229,8 +229,15 @@ class Task(object):
         newkw['actions'] = [(newkw.pop('run'), [get_file_paths(t, v) for v in varnames])] # TODO: list as argument
       else:
         actions = []
-        for (act, args) in newkw['actions']:
+        for action in newkw['actions']:
+          #print("action:", action)
           newargs = []
+          if isinstance(action, (list,tuple)):
+            act, args = action
+          else:
+            act = action
+          #print("act:", act)
+          #print("args:", args)
           for arg in args:
             if isinstance(arg, str):
               if arg[0] == '$':

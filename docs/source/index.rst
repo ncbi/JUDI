@@ -55,7 +55,7 @@ Easy plug-and-play
 .. _putting_together:
 
 .. toctree::
-   :maxdepth:2
+   :maxdepth: 2
    :caption: Putting Together
 
    example/pipeline
@@ -65,7 +65,7 @@ Easy plug-and-play
 .. _advanced_use:
 
 .. toctree::
-   :maxdepth:3
+   :maxdepth: 3
    :caption: Advanced Usage
 
    list-tasks
