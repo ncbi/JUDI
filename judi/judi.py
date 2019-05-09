@@ -36,10 +36,13 @@ def add_param(param_info, name = None):
   return 0
 
 
-def show_param_db():
+def show_param_db(param_db=None):
   """Print the global parameter database
   """
-  print("Global param db:\n", JUDI_PARAM.drop('JUDI', 1))
+  if not isinstance(param_db, pd.DataFrame):
+    print("Global param db:\n", JUDI_PARAM.drop('JUDI', 1))
+  else:
+    print("Param db:\n", param_db.drop('JUDI', 1))
 
 
 def copy_param_db():
@@ -116,8 +119,29 @@ def merge_pdfs(big, small):
 
 
 class File(object):
+  """A file in JUDI is an object of class File and is instantiated by calling the following constructor"""
   file_db = pd.DataFrame(columns = ['name', 'path'])
   def __init__(self, name, param = pd.DataFrame(), mask = None, path = None, root = './judi_files'):
+    """Create a JUDI file instance.
+
+    Args:
+       name (str): Name of the JUDI file to be created.
+
+    Kwargs:
+       param (pd.DataFrame): Parameter database associated with the JUDI file. If param is empty,
+       the golbal parameter database is taken to be associated with the file.
+       
+       mask (list of str): The list of parameters that are to be masked from the parameter database.
+
+       path: Specification of the physical path of the files associated with the JUDI file that is used
+       to generate a column 'path' in the parameter database of the JUDI file. It can be
+       of the following types: 1) callable: a user provider path generator that is passed to pandas apply function,
+       2) string or list of strings: actual path(s) to the physical files, and 3)
+       None: JUDI automatically generates a path for each row.
+
+       root (str): Top level directory where the physical files associated with the JUDI file are created.
+    """
+
     self.param = (JUDI_PARAM if param.empty else param).copy()
     if mask: self.param = mask_param_db(self.param, mask)
     if not self.param.empty:
