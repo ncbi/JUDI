@@ -6,9 +6,7 @@ execute any kind of task under many combinations of parameter settings.
 
 ## Sample Code
 
-Define functions returning python dict with task's meta-data.
-
-Snippet from [tutorial](https://judi.readthedocs.io/tutorial_1.html):
+Snippet from [tutorial](https://judi.readthedocs.io/tutorial_1.html), save it as ``dodo.py``.
 
 ```python
 from judi import File, Task, add_param, combine_csvs
@@ -48,7 +46,7 @@ class CombineCoverage(Task):
               geom_density(aes(color = factor(sample)))"\
               | R --vanilla""", ['$pdf','$csv'])]
 ```
-Run from terminal::
+Run from terminal:
 
 ```console
 $ doit list
