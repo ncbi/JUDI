@@ -1,12 +1,10 @@
-JUDI - Bioinformatics Pipeline: *Just Do It*
-============================================
+# JUDI - Bioinformatics Pipeline: *Just Do It*
 
 *judi* comes from the idea of bringing the power and efficiency of *doit* to
 execute any kind of task under many combinations of parameter settings.
 
 
-Sample Code
-===========
+## Sample Code
 
 Define functions returning python dict with task's meta-data.
 
@@ -52,41 +50,38 @@ class CombineCoverage(Task):
 ```
 Run from terminal::
 
-.. code-block:: console
+```console
+$ doit list
+AlignFastq
+CombineCoverage
+CreateBam
+GetCoverage
+$ doit
+. AlignFastq:group~1,sample~100
+. AlignFastq:group~2,sample~100
+. AlignFastq:group~1,sample~101
+. AlignFastq:group~2,sample~101
+. AlignFastq:group~1,sample~102
+. AlignFastq:group~2,sample~102
+. AlignFastq:group~1,sample~103
+. AlignFastq:group~2,sample~103
+. CreateBam:sample~100
+. CreateBam:sample~102
+. CreateBam:sample~103
+. CreateBam:sample~101
+. GetCoverage:sample~100
+. GetCoverage:sample~102
+. GetCoverage:sample~103
+. GetCoverage:sample~101
+. CombineCoverage:
+```
 
-  $ doit list
-  AlignFastq
-  CombineCoverage
-  CreateBam
-  GetCoverage
-  $ doit
-  . AlignFastq:group~1,sample~100
-  . AlignFastq:group~2,sample~100
-  . AlignFastq:group~1,sample~101
-  . AlignFastq:group~2,sample~101
-  . AlignFastq:group~1,sample~102
-  . AlignFastq:group~2,sample~102
-  . AlignFastq:group~1,sample~103
-  . AlignFastq:group~2,sample~103
-  . CreateBam:sample~100
-  . CreateBam:sample~102
-  . CreateBam:sample~103
-  . CreateBam:sample~101
-  . GetCoverage:sample~100
-  . GetCoverage:sample~102
-  . GetCoverage:sample~103
-  . GetCoverage:sample~101
-  . CombineCoverage:
+## Project Details
 
+ - Website & docs - [https://pyjudi.readthedocs.io](https://pyjudi.readthedocs.io)
+ - Project management on github - [https://github.com/ncbi/JUDI](https://github.com/ncbi/JUDI)
 
-Project Details
-===============
-
- - Website & docs - https://pyjudi.readthedocs.io
- - Project management on github - https://github.com/ncbi/JUDI
-
-License
-=======
+## License
 
 The MIT License
 Copyright (c) 2019-2020 Soumitra Pal
@@ -94,31 +89,26 @@ Copyright (c) 2019-2020 Soumitra Pal
 see LICENSE file
 
 
-Install
-=======
+## Install
 
 *judi* is tested on python 3.6.
 
-.. code-block:: console
+```console
+$ pip install judi
+```
 
-  $ pip install judi
-
-
-Dependencies
-=============
+## Dependencies
 
 - doit
 
-Documentation
-=============
+## Documentation
 
 ``docs`` folder contains ReST documentation based on Sphinx.
 
-.. code-block:: console
+```console
+$ make html
+```
 
-  docs$ make html
-
-Contributing
-==============
+## Contributing
 
 On github create pull requests using a named feature branch.
