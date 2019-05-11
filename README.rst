@@ -103,7 +103,7 @@ Install
 
 .. code-block:: console
 
- $ pip install judi
+  $ pip install judi
 
 
 Dependencies
@@ -118,7 +118,7 @@ Documentation
 
 .. code-block:: console
 
- docs$ make html
+  docs$ make html
 
 Contributing
 ==============
