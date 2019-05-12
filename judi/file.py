@@ -11,7 +11,7 @@ class File(object):
        name (str): Name of the JUDI file to be created.
 
     Kwargs:
-       param (pd.DataFrame): Parameter database associated with the JUDI file. If param is empty,
+       param (ParamDb): Parameter database associated with the JUDI file. If param is empty,
        the golbal parameter database is taken to be associated with the file.
        
        mask (list of str): The list of parameters that are to be masked from the parameter database.
