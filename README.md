@@ -6,72 +6,38 @@ execute any kind of task under many combinations of parameter settings.
 
 ## Sample Code
 
-Snippet from [tutorial](https://judi.readthedocs.io/tutorial_1.html), save it as ``dodo.py``.
+Snippet from [tutorial](example2), save it as ``dodo.py``. Also download [a.txt](example2/a.txt) and [b.txt](example2/b.txt).
 
 ```python
-from judi import File, Task, add_param, combine_csvs
+from judi import File, Task, add_param, show_param_db, combine_csvs
 
-add_param('100 101 102 103'.split(), 'sample')
-add_param('1 2'.split(), 'group')
+add_param([1, 2], 'n')
 
-REF = 'hg_refs/hg19.fa'
-path_gen = lambda x: '{}_{}.fq'.format(x['sample'],x['group'])
+class GetCounts(Task):
+  """Count lines, words and characters in file"""
+  inputs = {'inp': File('text', path=['a.txt', 'b.txt'])}
+  targets = {'out': File('counts.csv')}
+  actions = [("(echo line word char file; wc {}) | sed 's/^ \+//;s/ \+/,/g' > {}", ["$inp", "$out"])]
 
-class AlignFastq(Task):
-  inputs = {'reads': File('orig_fastq', path = path_gen)}
-  targets = {'sai': File('aln.sai')}
-  actions = [('bwa aln {} {} > {}', [REF,'$reads','$sai'])]
-
-class CreateBam(Task):
-  mask = ['group']
-  inputs = {'reads': AlignFastq.inputs['reads'],
-             'sai': AlignFastq.targets['sai']}
-  targets = {'bam': File('aln.bam', mask = mask)}
-  actions = [('bwa sampe {} {} {} | samtools view -Sbh - | samtools sort - > {}', [REF,'$sai','$reads','$bam'])]
-
-class GetCoverage(Task):
-  mask = ['group']
-  inputs = {'bam': CreateBam.targets['bam']}
-  targets = {'cov': File('cov.csv', mask = mask)}
-  actions = [('(echo val; samtools rmdup {} - | samtools mpileup - | cut -f4) > {}', ['$bam','$cov'])]
-
-class CombineCoverage(Task):
-  mask = ['group', 'sample']
-  inputs = {'cov': GetCoverage.targets['cov']}
-  targets = {'csv': File('combined.csv', mask = mask),
-             'pdf': File('pltcov.pdf', mask = mask, root = '.')}
-  actions = [(combine_csvs, ['#cov', '#csv']),
-             ("""echo "library(ggplot2); pdf('{}')
-              ggplot(read.csv('{}'), aes(x = val)) +
-              geom_density(aes(color = factor(sample)))"\
-              | R --vanilla""", ['$pdf','$csv'])]
+class CombineCounts(Task):
+  """Combine counts"""
+  mask = ['n']
+  inputs = {'inp': GetCounts.targets['out']}
+  targets = {'out': File('result.csv', mask=mask, root='.')}
+  actions = [(combine_csvs, ["#inp", "#out"])]
 ```
+
 Run from terminal:
 
 ```console
 $ doit list
-AlignFastq
-CombineCoverage
-CreateBam
-GetCoverage
+CombineCounts
+GetCounts
+Task
 $ doit
-. AlignFastq:group~1,sample~100
-. AlignFastq:group~2,sample~100
-. AlignFastq:group~1,sample~101
-. AlignFastq:group~2,sample~101
-. AlignFastq:group~1,sample~102
-. AlignFastq:group~2,sample~102
-. AlignFastq:group~1,sample~103
-. AlignFastq:group~2,sample~103
-. CreateBam:sample~100
-. CreateBam:sample~102
-. CreateBam:sample~103
-. CreateBam:sample~101
-. GetCoverage:sample~100
-. GetCoverage:sample~102
-. GetCoverage:sample~103
-. GetCoverage:sample~101
-. CombineCoverage:
+. GetCounts:n~2
+. GetCounts:n~1
+. CombineCounts:
 ```
 
 ## Project Details
