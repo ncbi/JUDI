@@ -8,7 +8,7 @@ JUDI File
 A JUDI File is associated with a parameter database and actually represents a collection of physical files, each corresponding to a row in the parameter database.
 
 
-.. autoclass:: judi.judi.File
+.. autoclass:: judi.File
    :members:
 
    .. automethod:: __init__

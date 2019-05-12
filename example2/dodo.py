@@ -1,6 +1,9 @@
-from judi import File, Task, add_param, combine_csvs
+from judi import File, Task, add_param, show_param_db, combine_csvs
+
 
 add_param([1, 2], 'n')
+
+show_param_db()
 
 class GetCounts(Task):
   """Count lines, words and characters in file"""

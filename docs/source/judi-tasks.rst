@@ -22,7 +22,7 @@ Parameter substitution in actions
 
 In additions to the forms of actions supported in DoIt, JUDI supports the following additional form:
 
-* (func, args): Here func could be a string or a callable and args is a list of arguments. When func is a str, it can have placeholders {} which are replaced by the elements of args. When func is a callable it must have only positional arguments provided through args. An element of args can have special strings which are replaced by values as shown in the following table:
+* ``(func, args)``: Here func could be a string or a callable and args is a list of arguments. When func is a str, it can have placeholders {} which are replaced by the elements of args. When func is a callable it must have only positional arguments provided through args. An element of args can have special strings which are replaced by values as shown in the following table:
 
 .. list-table:: Argument substitution rules
    :widths: 20 20 60
@@ -45,6 +45,15 @@ In additions to the forms of actions supported in DoIt, JUDI supports the follow
      - 
      - | Python dictionary containing all parameters
        | and their values
+
+Some special actions
+--------------------
+
+To help users of JUDI summarize data across parameter settings two examples of actions are given in module ``judi.utils``.
+
+* ``combine_csvs(pdb_big, pdb_small)``: This function row-binds the CSV files given in the path column of the file parameter database ``pdb_big`` into a single CSV file whose path is given in the path column of the file parameter database ``pdb_small``. The function additionally adds the extra parameter settings from ``pdb_big`` in the consolidated CSV file.
+
+* ``combine_pdfs(pdb_big, pdb_small)``: This function combines the pages from PDF files given in the path column of the file parameter database ``pdb_big`` into a single PDF file whose path is given in the path column of the file parameter database ``pdb_small``.
 
 
 Some examples

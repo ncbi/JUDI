@@ -10,12 +10,12 @@ In JUDI, each file and each task is associated with a parameter database. Howeve
 
 The global parameter database is populated using the following function:
 
-.. automodule:: judi.judi
+.. automodule:: judi.paramdb
    :members: add_param
 
 The global parameter database can be viewed using the following function:
 
-.. automodule:: judi.judi
+.. automodule:: judi.paramdb
    :members: show_param_db
 
 Some examples
