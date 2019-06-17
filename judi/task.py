@@ -63,6 +63,7 @@ class Task(object):
 
     # add name only after saving the original config columns
     param.df['name'] = param.df[cfg_cols].apply(lambda x: get_cfg_str(x), axis='columns')
+    param.df['parcfg'] = param.df[cfg_cols].apply(lambda x: get_cfg_str_unsrt(x), axis='columns')
 
     for (j, t) in param.df.iterrows():
       newkw = kw.copy()

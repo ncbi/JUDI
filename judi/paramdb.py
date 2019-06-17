@@ -26,6 +26,13 @@ class ParamDb(object):
   def mask(self, mask_cols):
     self.df = self.df.drop(mask_cols, 1).drop_duplicates()
 
+  def filter(self, name, values):
+    self.df = self.df[self.df[name].isin(values)]
+
+  def sort_columns(self, cols):
+    print(cols)
+    self.df = self.df.set_index(cols).sort_index().reset_index()
+
   def show(self):
     print(self.name, ':')
     if 'JUDI' in self.df.columns:
@@ -56,11 +63,17 @@ def add_param(param_info, name = None):
   JUDI_PARAM.add_param(param_info, name)
   return 0
 
+def remove_params(cols):
+  JUDI_PARAM.mask(cols)
 
 def show_param_db():
   """Print the global parameter database
   """
   JUDI_PARAM.show()
+
+
+def filter_param_vals(param, values):
+  JUDI_PARAM.filter(param, values)
 
 
 def copy_param_db():

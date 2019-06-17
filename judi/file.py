@@ -27,17 +27,22 @@ class File(object):
     self.param = (param if param else JUDI_PARAM).copy(name)
     if mask: self.param.mask(mask)
     if not self.param.df.empty:
-      if len(set(self.param.df.columns) - set(JUDI_PARAM.df.columns)):
-        print("Error: columns of param do not match with global param!!")
-        exit(-1)
+      #if len(set(self.param.df.columns) - set(JUDI_PARAM.df.columns)):
+      #  print("Error: columns of param do not match with global param!!")
+      #  exit(-1)
       self.param.df['name'] = name
       if not path:
-        self.param.df['path'] = self.param.df.apply(lambda x: get_cfg_str(x), axis='columns')
-        self.param.df['path'] = self.param.df.apply(lambda x: "/".join([e for e in [root, x['path'], x['name']] if e != '']), axis = 'columns')
+        if not 'path' in self.param.df.columns:
+          self.param.df['path'] = self.param.df.apply(lambda x: get_cfg_str(x), axis='columns')
+          self.param.df['path'] = self.param.df.apply(lambda x: "/".join([e for e in [root, x['path'], x['name']] if e != '']), axis = 'columns')
       elif callable(path):
         self.param.df['path'] = self.param.df.apply(path, axis='columns')
       else:
         self.param.df['path'] = path
       for path in self.param.df['path'].tolist():
         ensure_dir(path)
+
+  def copy(self, name=None):
+    newf = File(name, param=self.param)
+    return newf
 
