@@ -9,32 +9,72 @@ def ensure_dir(file_path):
 
 
 import json
-def get_cfg_str(x):
+def get_cfg_str(x, sort_keys=True):
   # json.dumps(r.to_dict(), sort_keys=True, separators = (',', '~'))[1:-1]
   # It seems DoIt does not allow equal (=) char in task name
-  return ",".join(['{}~{}'.format(k,v) for (k,v) in sorted(x.to_dict().items()) if k not in ['JUDI', 'name']])
+  key_vals = x.to_dict().items()
+  if sort_keys:
+    key_vals = sorted(key_vals)
+  return ",".join(['{}~{}'.format(k,v) if isinstance(v, str) else '{0}~{1:g}'.format(k,v)
+                    for (k,v) in key_vals if k not in ['JUDI', 'name']])
 
 def get_cfg_str_unsrt(x):
-  # json.dumps(r.to_dict(), sort_keys=True, separators = (',', '~'))[1:-1]
-  # It seems DoIt does not allow equal (=) char in task name
-  return ",".join(['{}~{}'.format(k,v) for (k,v) in x.to_dict().items() if k not in ['JUDI', 'name']])
+  get_cfg_str(x, False)
 
 
-def combine_csvs_base(params, infiles, outfile):
+######################################################
+############## COMBINE CSV FILES #####################
+######################################################
+
+def combine_csvs_base(params, infiles, outfile, sep=','):
   df = pd.DataFrame()
   for indx, r in params.assign(infile = infiles).iterrows():
-    tmp = pd.read_csv(r['infile'])
+    tmp = pd.read_csv(r['infile'], sep=sep)
     for col in params.columns:
       tmp[col] = r[col]
     df = df.append(tmp, ignore_index=True)
-  df.to_csv(outfile, index=False)
+  df.to_csv(outfile, sep=sep, index=False)
 
-
-def combine_csvs(big, small):
+def combine_csvs(big, small, sep=','):
   infiles = big['path'].tolist()
   outfile = small['path'].tolist()[0]
   params = big.drop(columns=['name', 'path'])
-  combine_csvs_base(params, infiles, outfile)
+  combine_csvs_base(params, infiles, outfile, sep)
+
+def combine_csvs_new(*arg, **kw):
+  infiles = []
+  params = pd.DataFrame()
+  # all but last positional paramdb give input files
+  for big in arg[:-1]:
+    infiles += big['path'].tolist()
+    params = params.append(big.drop(columns=['name', 'path']), ignore_index=True)
+  # the last positional paramdb gives output file
+  outfile = arg[-1]['path'].tolist()[0]
+  combine_csvs_base(params, infiles, outfile, kw['sep'])
+
+
+######################################################
+####### PUT MULTIPLE CSVS IN AN MSEXCEL    ###########
+######################################################
+
+def merge_csvs_base(params, infiles, outfile, sep=','):
+  writer = pd.ExcelWriter(outfile, engine='xlsxwriter')
+  par_cols = list(params.columns)
+  params['sheet'] = ['Sheet{}'.format(i+2) for i in range(params.shape[0])]
+  params.to_excel(writer, 'Sheet1')
+  for indx, r in params.assign(infile = infiles).iterrows():
+    tmp = pd.read_csv(r['infile'], sep=sep)
+    for col in par_cols:
+      tmp[col] = r[col]
+    tmp.to_excel(writer, r['sheet'])
+  writer.save()
+
+
+def merge_csvs_excel(big, small, sep=','):
+  infiles = big['path'].tolist()
+  outfile = small['path'].tolist()[0]
+  params = big.drop(columns=['name', 'path'])
+  merge_csvs_base(params, infiles, outfile, sep)
 
 
 ######################################################
@@ -105,6 +145,7 @@ def paste_pdfs_base(inpaths, outpath, title=''):
   def latex_tolerate(s):
     s = re.sub(',', '\string,', s)
     s = re.sub('~', '\string~', s)
+    s = re.sub('_', '\string_', s)
     return s
   infiles = [latex_tolerate(os.path.abspath(path)) for path in inpaths]
   doc = Document(documentclass='standalone')

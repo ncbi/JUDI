@@ -6,7 +6,7 @@ class ParamDb(object):
     self.name = name
     self.df = pd.DataFrame({'JUDI': ['*']})
 
-  def add_param(self, param_info, name=None):
+  def add_param(self, param_info, name=None, how='inner'):
     if isinstance(param_info, list):
       param_info = {name: param_info}
     if isinstance(param_info, dict):
@@ -16,7 +16,11 @@ class ParamDb(object):
     if not isinstance(param_info, pd.DataFrame):
       print("Error! input data must be a list, series or dataframe!!!")
       return 1
-    self.df = self.df.assign(key=1).merge(param_info.assign(key=1), on='key', how='outer').drop('key', 1)
+    if set(self.df.columns) & set(param_info):
+      # has common parameters
+      self.df = self.df.merge(param_info, how=how)
+    else:
+      self.df = self.df.assign(key=1).merge(param_info.assign(key=1), on='key', how='outer').drop('key', 1)
 
   def copy(self, name=''):
     other = ParamDb(name)
@@ -26,11 +30,17 @@ class ParamDb(object):
   def mask(self, mask_cols):
     self.df = self.df.drop(mask_cols, 1).drop_duplicates()
 
+  def keep(self, keep_cols):
+    keep_cols.append('JUDI')
+    self.df = self.df[keep_cols]
+
   def filter(self, name, values):
     self.df = self.df[self.df[name].isin(values)]
+  
+  def query(self, q):
+    self.df.query(q, inplace=True)
 
   def sort_columns(self, cols):
-    print(cols)
     self.df = self.df.set_index(cols).sort_index().reset_index()
 
   def show(self):

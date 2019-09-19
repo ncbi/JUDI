@@ -4,6 +4,8 @@ from .paramdb import *
 from .file import *
 from .utils import *
 
+from doit.tools import run_once
+
 def print_nested_df(cfg):
   dfs = [cfg]
   def dedf(x):
@@ -31,7 +33,7 @@ class Task(object):
     # Build a dictionary from the class variables
     kw = dict((a, getattr(cls, a)) for a in dir(cls) if not a.startswith('_')) 
     # We are interested only in few class variables
-    kw = {k:v for k,v in kw.items() if k in ['param', 'mask', 'inputs', 'targets', 'run', 'actions']}
+    kw = {k:v for k,v in kw.items() if k in ['param', 'mask', 'mask_row', 'keep', 'inputs', 'targets', 'run', 'actions']}
     kw['doc'] = cls.__doc__
     kw['basename'] = cls.__name__ 
     kw['clean'] = True 
@@ -42,16 +44,28 @@ class Task(object):
 
     mask = kw.pop('mask') if 'mask' in kw else None
     if mask: param.mask(mask)
+    
+    mask_row = kw.pop('mask_row') if 'mask_row' in kw else None
+    if mask_row: param.query(mask_row)
 
-    inputs = kw.pop('inputs')
+    keep = kw.pop('keep') if 'keep' in kw else None
+    if keep: param.keep(keep)
+
+    # A JUDI task must define targets and optionally inputs
     targets = kw.pop('targets')
+    file_dicts = [targets]
+    inputs = None
+    if 'inputs' in kw:
+      inputs = kw.pop('inputs')
+      file_dicts += [inputs]
+    
 
     cfg_cols = param.df.columns.tolist()
     cfg_cols_wo_spl = list(filter(lambda x: x != 'JUDI', cfg_cols))
 
     # For each input/target file f create D_{t,f} table
     # and merge the information to the param.df db
-    for files in [inputs, targets]:
+    for files in file_dicts:
       for fkey in files.keys():
         grp_cols = list(filter(lambda x: x in cfg_cols, files[fkey].param.df.columns))
         engroup = lambda x: pd.DataFrame({fkey:[x.drop(columns=grp_cols)]})
@@ -65,11 +79,33 @@ class Task(object):
     param.df['name'] = param.df[cfg_cols].apply(lambda x: get_cfg_str(x), axis='columns')
     param.df['parcfg'] = param.df[cfg_cols].apply(lambda x: get_cfg_str_unsrt(x), axis='columns')
 
+    #print(param.df.to_string())
+    def substitute(arg, t):
+      if isinstance(arg, str):
+        if arg[0] == '$':
+          plist = t[arg[1:]]['path'].tolist()
+          return(plist[0] if len(plist) == 1 else plist)
+        elif arg[0] == '#':
+          if arg == '##':
+            return(t[cfg_cols_wo_spl])
+          else:
+            return(t[arg[1:]])
+        else:
+          return(arg)
+      else:
+        return(arg)
+
     for (j, t) in param.df.iterrows():
       newkw = kw.copy()
       newkw['name'] = t['name'] 
       newkw['targets'] = [p for f in targets.keys() for p in get_file_paths(t, f)]
-      newkw['file_dep'] = [p for f in inputs.keys() for p in get_file_paths(t, f)]
+
+      if inputs:
+        newkw['file_dep'] = [p for f in inputs.keys() for p in get_file_paths(t, f)]
+      else :
+        # if inputs not define, make targets to be built only once
+        newkw['uptodate'] = [run_once]
+
 
       if 'actions' not in newkw:
         #get the name of the arguments of run
@@ -79,24 +115,19 @@ class Task(object):
         actions = []
         for action in newkw['actions']:
           newargs = []
+          newactkws = {}
           if isinstance(action, (list,tuple)):
-            act, args = action
+            if (len(action) > 2):
+              act, args, act_kw = action
+            else:
+              act, args = action
+              act_kw = {}
           else:
             act = action
           for arg in args:
-            if isinstance(arg, str):
-              if arg[0] == '$':
-                plist = t[arg[1:]]['path'].tolist()
-                newargs.append(plist[0] if len(plist) == 1 else plist)
-              elif arg[0] == '#':
-                if arg == '##':
-                  newargs.append(t[cfg_cols_wo_spl])
-                else:
-                  newargs.append(t[arg[1:]])
-              else:
-                newargs.append(arg)
-            else:
-              newargs.append(arg)
+            newargs.append(substitute(arg, t))
+          for act_key in act_kw:
+            newactkws[act_key] = substitute(act_kw[act_key], t)
           if isinstance(act, str):
             for i, v in enumerate(newargs):
               if isinstance(v, list):
@@ -105,7 +136,7 @@ class Task(object):
             newargs = []
           else:
             newact = act
-          actions += [(newact, newargs) if len(newargs) else (newact)]
+          actions += [(newact, newargs, newactkws) if len(newargs) + len(newactkws) else (newact)]
         newkw['actions'] = actions
       if show_details:
         print("------------------")
