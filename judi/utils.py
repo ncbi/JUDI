@@ -19,7 +19,7 @@ def get_cfg_str(x, sort_keys=True):
                     for (k,v) in key_vals if k not in ['JUDI', 'name']])
 
 def get_cfg_str_unsrt(x):
-  get_cfg_str(x, False)
+  return(get_cfg_str(x, False))
 
 
 ######################################################
@@ -29,15 +29,20 @@ def get_cfg_str_unsrt(x):
 def combine_csvs_base(params, infiles, outfile, sep=','):
   df = pd.DataFrame()
   for indx, r in params.assign(infile = infiles).iterrows():
-    tmp = pd.read_csv(r['infile'], sep=sep)
+    tmp = pd.read_csv(r['infile'], sep=sep, index_col=[0]).reset_index()
     for col in params.columns:
       tmp[col] = r[col]
     df = df.append(tmp, ignore_index=True)
   df.to_csv(outfile, sep=sep, index=False)
 
 def combine_csvs(big, small, sep=','):
+  print("hahahahahah")
+  print(big)
+  print(small)
   infiles = big['path'].tolist()
   outfile = small['path'].tolist()[0]
+  print(infiles)
+  print(outfile)
   params = big.drop(columns=['name', 'path'])
   combine_csvs_base(params, infiles, outfile, sep)
 
@@ -63,7 +68,7 @@ def merge_csvs_base(params, infiles, outfile, sep=','):
   params['sheet'] = ['Sheet{}'.format(i+2) for i in range(params.shape[0])]
   params.to_excel(writer, 'Sheet1')
   for indx, r in params.assign(infile = infiles).iterrows():
-    tmp = pd.read_csv(r['infile'], sep=sep)
+    tmp = pd.read_csv(r['infile'], sep=sep, index_col=[0]).reset_index()
     for col in par_cols:
       tmp[col] = r[col]
     tmp.to_excel(writer, r['sheet'])
@@ -98,6 +103,20 @@ def merge_pdfs_base(infiles, outfile):
 def merge_pdfs(big, small):
   infiles = big['path'].tolist()
   outfile = small['path'].tolist()[0]
+  merge_pdfs_base(infiles, outfile)
+
+
+def merge_pdfs_new(*arg, **kw):
+  infiles = []
+  # all but last positional paramdb give input files
+  if kw['collate']:
+    infiles = [z for y in zip(*[x['path'].tolist() for x in arg[:-1]]) for z in y]
+  else:
+    for big in arg[:-1]:
+      infiles += big['path'].tolist()
+  # the last positional paramdb gives output file
+  outfile = arg[-1]['path'].tolist()[0]
+  print(infiles)
   merge_pdfs_base(infiles, outfile)
 
 
@@ -140,12 +159,15 @@ from pylatex.package import Package
 import os, re
 
 def paste_pdfs_base(inpaths, outpath, title=''):
+  print("--------", title, "-----------")
   if isinstance(inpaths, str): inpaths = [inpaths]
   prefix = os.path.splitext(outpath)[0]
   def latex_tolerate(s):
-    s = re.sub(',', '\string,', s)
-    s = re.sub('~', '\string~', s)
-    s = re.sub('_', '\string_', s)
+    print("=============", s, "==============")
+    print(s)
+    s = re.sub(',', '\\\\string,', s)
+    s = re.sub('~', '\\\\string~', s)
+    s = re.sub('_', '\\\\string_', s)
     return s
   infiles = [latex_tolerate(os.path.abspath(path)) for path in inpaths]
   doc = Document(documentclass='standalone')
@@ -161,4 +183,28 @@ def paste_pdfs_base(inpaths, outpath, title=''):
 def paste_pdfs(*arg, **kw):
   inpaths = arg[0:-1]
   outpath = arg[-1]
-  paste_pdfs_base(inpaths, outpath)
+  paste_pdfs_base(inpaths, outpath, kw['title'])
+
+
+
+######################################################
+##### CREATE MULTI-INDEX MATRIX FROM DATAFRAME  ######
+######################################################
+# inpath: input csv/tsv file
+# output: output MS xlsx file
+# idx_spec: specification of the columns of input df
+# in the form of 'row-idx-cols|col-idx-cols|remain-cols'
+# the cols in the parts in between '|' are separated by space
+# sep: separator in the input csv/tsv file
+def df_to_multi_idx_excel(inpath, outpath, idx_spec, sep=','):
+  parts = idx_spec.split('|')
+  rowmidx = parts[0].strip().split()
+  colmidx = parts[1].strip().split()
+  cols = parts[2].strip().split()
+  df = pd.read_csv(inpath, sep=sep)
+  df = df[rowmidx + colmidx + cols]
+  df = df.set_index(rowmidx + colmidx)
+  for cx in colmidx:
+    df = df.unstack(cx)
+  print(df)
+  df.to_excel(outpath)
