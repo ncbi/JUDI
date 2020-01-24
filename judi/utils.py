@@ -191,7 +191,7 @@ def paste_pdfs(*arg, **kw):
 ##### CREATE MULTI-INDEX MATRIX FROM DATAFRAME  ######
 ######################################################
 # inpath: input csv/tsv file
-# output: output MS xlsx file
+# outpath: output MS xlsx file
 # idx_spec: specification of the columns of input df
 # in the form of 'row-idx-cols|col-idx-cols|remain-cols'
 # the cols in the parts in between '|' are separated by space

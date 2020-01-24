@@ -6,14 +6,15 @@ from .utils import *
 
 from doit.tools import run_once
 
-def print_nested_df(cfg):
-  dfs = [cfg]
+def print_nested_df(orig):
+  dfs = [None]
   def dedf(x):
     if isinstance(x, pd.DataFrame):
+      i = len(dfs)
       dfs.append(x)
-      return "df{}".format(len(dfs))
+      return f"df{i}"
     return x
-  dfs[0] = cfg.applymap(dedf)
+  dfs[0] = orig.applymap(dedf)
   for i, df in enumerate(dfs):
     print(f"df{i}:\n", df)
 
@@ -63,23 +64,36 @@ class Task(object):
     cfg_cols = param.df.columns.tolist()
     cfg_cols_wo_spl = list(filter(lambda x: x != 'JUDI', cfg_cols))
 
+    def engroup(x, cols):
+      #print(x)
+      #we need to reindex the dataframe, otherwise it gives some error
+      return pd.DataFrame({fkey:[x.drop(cols, axis='columns').reindex()]})
+
     # For each input/target file f create D_{t,f} table
     # and merge the information to the param.df db
     for files in file_dicts:
       for fkey in files.keys():
+        #print("============", fkey, "=============")
         grp_cols = list(filter(lambda x: x in cfg_cols, files[fkey].param.df.columns))
-        engroup = lambda x: pd.DataFrame({fkey:[x.drop(columns=grp_cols)]})
-        dtf = files[fkey].param.df.groupby(grp_cols).apply(engroup)
+        #print(grp_cols)
+        #print(files[fkey].param.df)
+        dtf = files[fkey].param.df.groupby(grp_cols).apply(engroup, cols=grp_cols)
+        #print(dtf)
+        #print("~~~~~~~*********\nnested dtf")
+        #print_nested_df(dtf)
         dtf.index = dtf.index.droplevel(len(grp_cols))
         dtf = dtf.reset_index()
+        #print("******************\nnested dtf")
         #print_nested_df(dtf)
         param.df = param.df.merge(dtf)
+        #print("##################\nnested df")
+        #print_nested_df(param.df)
 
     # add name only after saving the original config columns
     param.df['name'] = param.df[cfg_cols].apply(lambda x: get_cfg_str(x), axis='columns')
     param.df['parcfg'] = param.df[cfg_cols].apply(lambda x: get_cfg_str_unsrt(x), axis='columns')
 
-    #print(param.df.to_string())
+    #print_nested_df(param.df)
     def substitute(arg, t):
       if isinstance(arg, str):
         if arg[0] == '$':
@@ -89,6 +103,9 @@ class Task(object):
           if arg == '##':
             return(t[cfg_cols_wo_spl])
           else:
+            #print(kw['basename'])
+            #print(arg)
+            #print(t[arg[1:]])
             return(t[arg[1:]])
         else:
           return(arg)
@@ -96,6 +113,7 @@ class Task(object):
         return(arg)
 
     for (j, t) in param.df.iterrows():
+      #print(t['parcfg'])
       newkw = kw.copy()
       newkw['name'] = t['name'] 
       newkw['targets'] = [p for f in targets.keys() for p in get_file_paths(t, f)]
