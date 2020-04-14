@@ -29,6 +29,7 @@ def get_cfg_str_unsrt(x):
 def combine_csvs_base(params, infiles, outfile, sep=','):
   df = pd.DataFrame()
   for indx, r in params.assign(infile = infiles).iterrows():
+    print(r['infile'])
     tmp = pd.read_csv(r['infile'], sep=sep, index_col=[0]).reset_index()
     for col in params.columns:
       tmp[col] = r[col]
