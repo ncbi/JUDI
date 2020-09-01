@@ -32,20 +32,20 @@ class Task(object):
     if cls is Task:
         return # avoid create tasks from base class 'Task'
     # Build a dictionary from the class variables
-    kw = dict((a, getattr(cls, a)) for a in dir(cls) if not a.startswith('_')) 
+    kw = dict((a, getattr(cls, a)) for a in dir(cls) if not a.startswith('_'))
     # We are interested only in few class variables
     kw = {k:v for k,v in kw.items() if k in ['param', 'mask', 'mask_row', 'keep', 'inputs', 'targets', 'run', 'actions']}
     kw['doc'] = cls.__doc__
-    kw['basename'] = cls.__name__ 
-    kw['clean'] = True 
-    kw['verbosity'] = 2 
+    kw['basename'] = cls.__name__
+    kw['clean'] = True
+    kw['verbosity'] = 2
 
     global JUDI_PARAM
     param = (kw.pop('param') if 'param' in kw else JUDI_PARAM).copy()
 
     mask = kw.pop('mask') if 'mask' in kw else None
     if mask: param.mask(mask)
-    
+
     mask_row = kw.pop('mask_row') if 'mask_row' in kw else None
     if mask_row: param.query(mask_row)
 
@@ -59,7 +59,7 @@ class Task(object):
     if 'inputs' in kw:
       inputs = kw.pop('inputs')
       file_dicts += [inputs]
-    
+
 
     cfg_cols = param.df.columns.tolist()
     cfg_cols_wo_spl = list(filter(lambda x: x != 'JUDI', cfg_cols))
@@ -68,6 +68,8 @@ class Task(object):
       #print(x)
       #we need to reindex the dataframe, otherwise it gives some error
       return pd.DataFrame({fkey:[x.drop(cols, axis='columns').reindex()]})
+
+    # TODO: make sure that none of the parameter values is NaN
 
     # For each input/target file f create D_{t,f} table
     # and merge the information to the param.df db
@@ -115,7 +117,7 @@ class Task(object):
     for (j, t) in param.df.iterrows():
       #print(t['parcfg'])
       newkw = kw.copy()
-      newkw['name'] = t['name'] 
+      newkw['name'] = t['name']
       newkw['targets'] = [p for f in targets.keys() for p in get_file_paths(t, f)]
 
       if inputs:
@@ -124,13 +126,18 @@ class Task(object):
         # if inputs not define, make targets to be built only once
         newkw['uptodate'] = [run_once]
 
-
       if 'actions' not in newkw:
         #get the name of the arguments of run
         varnames = newkw['run'].__code__.co_varnames[1:] # first variable is 'self' which should be ignored
         newkw['actions'] = [(newkw.pop('run'), [get_file_paths(t, v) for v in varnames])] # TODO: list as argument
       else:
         actions = []
+
+        # add one action to make sure that the target directory exists
+        # if not create one
+        for tgt_path in newkw['targets']:
+          actions += [(ensure_dir, [tgt_path], {})]
+
         for action in newkw['actions']:
           newargs = []
           newactkws = {}

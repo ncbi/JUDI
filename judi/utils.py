@@ -1,4 +1,6 @@
 import pandas as pd
+from tqdm import tqdm
+tqdm.pandas()
 
 import os
 def ensure_dir(file_path):
@@ -9,13 +11,13 @@ def ensure_dir(file_path):
 
 
 import json
-def get_cfg_str(x, sort_keys=True):
+def get_cfg_str(x, sort_keys=True, param_sep=','):
   # json.dumps(r.to_dict(), sort_keys=True, separators = (',', '~'))[1:-1]
   # It seems DoIt does not allow equal (=) char in task name
   key_vals = x.to_dict().items()
   if sort_keys:
     key_vals = sorted(key_vals)
-  return ",".join(['{}~{}'.format(k,v) if isinstance(v, str) else '{0}~{1:g}'.format(k,v)
+  return param_sep.join(['{}~{}'.format(k,v) if isinstance(v, str) else '{0}~{1:g}'.format(k,v)
                     for (k,v) in key_vals if k not in ['JUDI', 'name']])
 
 def get_cfg_str_unsrt(x):
@@ -26,7 +28,7 @@ def get_cfg_str_unsrt(x):
 ############## COMBINE CSV FILES #####################
 ######################################################
 
-def combine_csvs_base(params, infiles, outfile, sep=','):
+def combine_csvs_base_slow(params, infiles, outfile, sep=','):
   df = pd.DataFrame()
   for indx, r in params.assign(infile = infiles).iterrows():
     print(r['infile'])
@@ -36,10 +38,24 @@ def combine_csvs_base(params, infiles, outfile, sep=','):
     df = df.append(tmp, ignore_index=True)
   df.to_csv(outfile, sep=sep, index=False)
 
+
+def combine_csvs_base(params, infiles, outfile, sep=','):
+  old_cols = params.columns.values.tolist()
+  df = params.reset_index().assign(infile = infiles)
+  def read_infile(x):
+      infile = x.iloc[0,:]['infile']
+      print(infile)
+      return(pd.read_csv(infile, sep=sep, index_col=[0]).reset_index())
+  df = df.groupby(old_cols).progress_apply(read_infile)
+  # groupby creates one extra level of index, we need to remove that
+  df.index = df.index.droplevel(df.index.nlevels-1)
+  df = df.reset_index()
+  df.to_csv(outfile, sep=sep, index=False)
+
+
 def combine_csvs(big, small, sep=','):
-  print("hahahahahah")
-  print(big)
-  print(small)
+  #print(big)
+  #print(small)
   infiles = big['path'].tolist()
   outfile = small['path'].tolist()[0]
   print(infiles)
@@ -57,6 +73,65 @@ def combine_csvs_new(*arg, **kw):
   # the last positional paramdb gives output file
   outfile = arg[-1]['path'].tolist()[0]
   combine_csvs_base(params, infiles, outfile, kw['sep'])
+
+
+######################################################
+####### GET SUBSET OF ROWS FROW CSVS       ###########
+######################################################
+
+
+def subset_csv(infile, outfile, params, sep=',', filt=None):
+    """Subset rows of dataframe from <infile> and save in <outfile>.
+    Other arguments:
+    params -- JUDI parameters as a dictionary
+    filt   -- a dictionary of dictionaries, filt[col][param] should
+              contain the pandas query string to subset rows by applying
+              rule param to column col
+    """
+    new_colnames = {} # to handle conflict of columns with same name as in params
+    query_str = [] # query string parts to be combined using AND
+    df = pd.read_csv(infile, sep=sep, index_col=[0]).reset_index()
+    columns = df.columns.values.tolist()
+    # to support query strings containing values from parameter settings
+    # we add the parameter values as columns; later those will be deleted
+    extra_cols = list(set(params.keys()) - set(columns))
+    for ec in extra_cols:
+        df[ec] = params[ec]
+    #print('params', params)
+    #print('columns', columns)
+    #print('filt', filt)
+    for pname, pval in params.items():
+        if pval == 'all':
+            # do nothing
+            pass
+        elif (pname in filt) and (pval in filt[pname]):
+                query_str.append(f'({filt[pname][pval]})')
+        else:
+            if isinstance(pval, str): pval = f'"{pval}"'
+            query_str.append(f'({pname} == {pval})')
+
+    #for col in filt.keys():
+    #    if (col in columns) and (col in params):
+    #        param_val = params[col]
+    #        if (param_val != 'all'):
+    #            if (param_val in filt[col]):
+    #                query_str.append(f'({filt[col][param_val]})')
+    #            else:
+    #                query_str.append(f'({col} == {param_val})')
+    #        new_colnames[col] = f'{col}_old'
+    print('query_str:', query_str)
+    print(df)
+    if (query_str):
+        query_str = ' & '.join(query_str)
+        print('query_str:', query_str)
+        df = df.query(query_str)
+        print(df)
+    df = (df.drop(columns=extra_cols)
+          .rename(columns=new_colnames)
+         )
+    print(df)
+    print(outfile)
+    df.to_csv(outfile, sep=sep, index=False)
 
 
 ######################################################
@@ -159,24 +234,64 @@ from pylatex.utils import italic, NoEscape
 from pylatex.package import Package
 import os, re
 
-def paste_pdfs_base(inpaths, outpath, title=''):
+
+def latex_tolerate(s):
+  print("=============", s, "==============")
+  print(s)
+  s = re.sub(',', '\\\\string,', s)
+  s = re.sub('~', '\\\\string~', s)
+  s = re.sub('_', '\\\\string_', s)
+  return s
+
+def paste_pdfs_base(inpaths, outpath, title='', flow='below'):
   print("--------", title, "-----------")
   if isinstance(inpaths, str): inpaths = [inpaths]
+  print("--------", inpaths, "-----------")
   prefix = os.path.splitext(outpath)[0]
-  def latex_tolerate(s):
-    print("=============", s, "==============")
-    print(s)
-    s = re.sub(',', '\\\\string,', s)
-    s = re.sub('~', '\\\\string~', s)
-    s = re.sub('_', '\\\\string_', s)
-    return s
   infiles = [latex_tolerate(os.path.abspath(path)) for path in inpaths]
   doc = Document(documentclass='standalone')
   doc.preamble.append(NoEscape(r'\usetikzlibrary{chains}'))
-  with doc.create(TikZ(options=NoEscape('start chain = going right, node distance=0'))) as pic:
+  with doc.create(TikZ(options=NoEscape(f'start chain = going {flow}, node distance=0'))) as pic:
     for infile in infiles:
       pic.append(TikZNode(text=NoEscape(f'\includegraphics{{{infile}}}'), options='on chain'))
     top = TikZNode(text=NoEscape('\\large\\bfseries '+latex_tolerate(title)), options='above', at=TikZCoordinate(0,0))
+    top._position = '(current bounding box.north)'
+    pic.append(top)
+  doc.generate_pdf(NoEscape(prefix), clean_tex=False)
+
+
+def pdf_matrix(big, small, title='', row=None, col=None):
+  prefix = os.path.splitext(small['path'].tolist()[0])[0]
+  if isinstance(row, str): row=[row]
+  if isinstance(col, str): col=[col]
+  df = big[row+col+['path']].set_index(row+col)
+  for cl in col:
+      df = df.unstack(cl)
+  df = df['path']
+  df = df.applymap(os.path.abspath)
+  df = df.applymap(latex_tolerate)
+  doc = Document(documentclass='standalone')
+  doc.preamble.append(NoEscape(r'\usetikzlibrary{matrix}'))
+  with doc.create(TikZ()) as pic:
+    mbody = """\\tikzset{mylabel/.style={color=blue, font=\\large \\bfseries \\ttfamily}}
+               \\matrix (m) [matrix of nodes, row sep = 2ex] {
+            """
+    mbody += ' \\\\\n'.join([r' & '.join([f'\includegraphics{{{df.iloc[r,c]}}}'
+                                          for c in range(df.shape[1])])
+                             for r in range(df.shape[0])])
+    mbody += '\\\\\n};\n'
+    for r in range(df.shape[0]):
+      for c in range(df.shape[1]):
+        tmp = df.iloc[r:r+1,c:c+1]
+        names = tmp.index.names + tmp.columns.names
+        vals = tmp.index.values.tolist() + tmp.columns.values.tolist()
+        label = ','.join([f'{k}~{v}' for k,v in zip(names,vals)])
+        label = latex_tolerate(label)
+        mbody += f'\\node[above, mylabel] at (m-{r+1}-{c+1}.north) {{{label}}};\n'
+    pic.append(NoEscape(mbody))
+    top = TikZNode(text=NoEscape(latex_tolerate(title)),
+                   options=['above', 'mylabel'],
+                   at=TikZCoordinate(0,0))
     top._position = '(current bounding box.north)'
     pic.append(top)
   doc.generate_pdf(NoEscape(prefix), clean_tex=False)
