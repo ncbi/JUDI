@@ -43,7 +43,8 @@ class File(object):
     self.param = (param if param else JUDI_PARAM).copy(name)
     if mask: self.param.mask(mask)
     if keep: self.param.keep(keep)
-    if not name: name = basename.replace('.', '_')
+    if (not name) and (basename):
+        name = basename.replace('.', '_')
     self.param.df.drop_duplicates(inplace=True)
     if not self.param.df.empty:
       self.param.df['name'] = name
@@ -67,7 +68,7 @@ class File(object):
 
   def copy(self, name=None):
     # to make sure that the path name copied exactly, we need to pass root as None
-    newf = File(name, param=self.param, root=None)
+    newf = File(basename=None, name=name, param=self.param, root=None)
     return newf
 
   def rename(self, chdict):
