@@ -103,6 +103,7 @@ pdb_regime = ParamDb("regime")
 pdb_regime.add_param(sim_regs, 'regime')
 
 # Next define JUDI files associated with task: simulate 
+ 
 
 jf_reg = File('regime', param=pdb_regime, root=metadata_dir,
               path=lambda x: 'regime_{}.csv'.format(x['regime']))
@@ -110,6 +111,12 @@ jf_modreg = jf_reg.copy().rename({'regime':'modreg'})
 
 jf_tree = File('newick', param=pdb_tree, root=metadata_dir,
                path=lambda x: 'drosophila{}.newick'.format(48 if x['tree'] == 'big' else 9))
+
+
+# ATTN.2 : We don't need to worry about the actual path of the files
+#          JUDI will create them automatically in a hierachry determined
+#          by the sorted order of parameters, e.g.,
+# sim_data_dir/sim_data_tsv/alpha~1/fold~1/gammatilde~0.25/model~OU1/modreg~global/sigmasq~1/theta~1000/tree~small/sim_data.tsv
 jf_sim = File('sim_data.tsv', param=pdb_sim, root=sim_data_dir)
 
 
@@ -135,7 +142,6 @@ pdb_fit.add_param(num_reps, 'numrep')
 pdb_fit.add_param(fit_regs, 'regime')
 # ATTN.1c : Another way of restricting parameter combinations
 pdb_fit.query('~(fitmodel in ["brown", "brown.av", "brown.mv", "brown.re"] & regime != "global")')
-pdb_fit.show()
 
 # JUDI files
 
@@ -158,7 +164,7 @@ class FitModel(Task):
 pdb_hypothesis = pdb_sim.copy("hypothesis")
 pdb_hypothesis.add_param(pd.read_csv(StringIO(hypothesis_string), comment='#'))
 
-# ATTN.2 : Use the same file as both alternative (h1) and null hypothesis (h0)
+# ATTN.3 : Use the same file as both alternative (h1) and null hypothesis (h0)
 #          Which of tests OU vs BM, OU2 vs BM and OU2 vs OU1 use which h1 and
 #          h0 are controlled using the parameter database of the task
 jf_null_stats = jf_model_stats.copy('null_stats')
@@ -186,7 +192,7 @@ pdb_combine_hypo.mask("hypo regime null nullreg".split())
 jf_hypo_combined = File('hypo_combined.tsv', param=pdb_combine_hypo,
                         root=sim_fitted_dir)
 
-# ATTN.3 : Note that here we do not combine all the hypothesis tests
+# ATTN.4 : Note that here we do not combine all the hypothesis tests
 #          into a single file. Rather we combine only the results that
 #          correspond to a particular simulated dataset and a fitmodel
 
