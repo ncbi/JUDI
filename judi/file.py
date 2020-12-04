@@ -52,7 +52,7 @@ class File(object):
         if not 'path' in self.param.df.columns:
           if flat:
             self.param.df['path'] = self.param.df.apply(lambda x: get_cfg_str(x), axis='columns')
-            self.param.df['path'] = self.param.df.apply(lambda x: "/".join([e for e in [x['path'], x['name']] if e]), axis = 'columns')
+            self.param.df['path'] = self.param.df.apply(lambda x: "/".join([e for e in [x['path'], basename] if e]), axis = 'columns')
           else:
             self.param.df['path'] = self.param.df.apply(lambda x: get_cfg_str(x, param_sep='/'), axis='columns')
             self.param.df['path'] = self.param.df.apply(lambda x: "/".join([e for e in [x['name'], x['path'], basename] if e]), axis = 'columns')
