@@ -1,0 +1,36 @@
+import pandas as pd
+from utils import Paramspace
+
+
+racer = Paramspace(pd.DataFrame({'game': [1,1,2,2],
+                                'racer': ['tortoise','hare','tortoise','hare']}))
+
+game = Paramspace(pd.DataFrame({'game': [1,2]}))
+
+rule all:
+    input:
+        expand("combined_csv/{params}.csv", params=game.instance_patterns)
+
+
+rule simulate:
+    output:
+        f"csv/{racer.wildcard_pattern}.csv"
+    params:
+        simulation=racer.instance
+    shell:
+        "cp {params.simulation.racer}_{params.simulation.game}.csv {output}"
+
+
+rule combine:
+    input:
+        expand("csv/{params}.csv", params=racer.instance_patterns)
+    output:
+        f"combined_csv/{game.wildcard_pattern}.csv"
+    params:
+        simulation=game.instance
+    run:
+        df = pd.concat([pd.read_csv(in_for_hare),
+                        pd.read_csv(in_for_tortoise)],
+                       keys = ['hare', 'tortoise'],
+                       names = ['racer'])
+        df.to_csv(output)
