@@ -29,6 +29,8 @@ rule combine:
     params:
         simulation=game.instance
     run:
+        print(input)
+        print(output)
         df = pd.concat([pd.read_csv(in_for_hare),
                         pd.read_csv(in_for_tortoise)],
                        keys = ['hare', 'tortoise'],

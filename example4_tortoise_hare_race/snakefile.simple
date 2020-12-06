@@ -1,0 +1,26 @@
+import pandas as pd
+game = [1, 2]
+racer = ['tortoise', 'hare']
+
+rule all:
+    input:
+        expand("combined_csv/game~{game}.csv", game=game)
+
+
+rule simulate:
+    output:
+        "csv/game~{game}/racer~{racer}.csv"
+    shell:
+        "cp {wildcards.racer}_{wildcards.game}.csv {output}"
+
+
+rule combine:
+    input:
+        expand("csv/game~{{game}}/racer~{racer}.csv", racer=racer)
+    output:
+        "combined_csv/game~{game}.csv"
+    run:
+        df = pd.concat([pd.read_csv(x) for x in input],
+                       keys = racer,
+                       names = ['racer'])
+        df.to_csv(output[0])
