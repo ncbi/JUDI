@@ -2,10 +2,12 @@ import pandas as pd
 from utils import Paramspace
 
 
-racer = Paramspace(pd.DataFrame({'game': [1,1,2,2],
-                                'racer': ['tortoise','hare','tortoise','hare']}))
-
-game = Paramspace(pd.DataFrame({'game': [1,2]}))
+racer = Paramspace(
+    pd.DataFrame(
+        {'game': [1,1,2,2],
+         'racer': ['tortoise','hare','tortoise','hare']}
+    ).set_index("game", drop=False)
+)
 
 rule all:
     input:
@@ -23,11 +25,12 @@ rule simulate:
 
 rule combine:
     input:
-        expand("csv/{params}.csv", params=racer.instance_patterns)
+        # Here we constrain the paramspace to the game chosen via the wildcard of the output file.
+        # For such wildcard-value dependent decisions, Snakemake allows to use Python functions or 
+        # lambda expressions, which are evaluated for each job.
+        lambda wildcards: expand("csv/{params}.csv", params=racer.loc[int(wildcards.game)].instance_patterns)
     output:
-        f"combined_csv/{game.wildcard_pattern}.csv"
-    params:
-        simulation=game.instance
+        f"combined_csv/{game}.csv"
     run:
         print(input)
         print(output)
