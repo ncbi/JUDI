@@ -77,5 +77,7 @@ class File(object):
   def query(self, q):
     new = self.copy()
     new.param.df.query(q, inplace=True)
+    if (new.param.df.empty):
+        print("WARNING! file parameter db is empty!!!!")
     return new
 
