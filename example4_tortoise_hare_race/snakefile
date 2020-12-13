@@ -1,38 +1,37 @@
 import pandas as pd
-from utils import Paramspace
+from utils import Paramspace, Filespace
 
 
-racer = Paramspace(pd.DataFrame({'game': [1,1,2,2],
-                                'racer': ['tortoise','hare','tortoise','hare']}))
+ps_racer = Paramspace(pd.DataFrame({'game': [1,1,2,2],
+                                    'racer': ['tortoise','hare',
+                                              'tortoise','hare']}))
 
-game = Paramspace(pd.DataFrame({'game': [1,2]}))
+ps_game = Paramspace(pd.DataFrame({'game': [1,2]}))
+
+
+timing = Filespace('timing.csv', ps_racer)
+
+combined = Filespace('combined_timing.csv', ps_game)
 
 rule all:
-    input:
-        expand("combined_csv/{params}.csv", params=game.instance_patterns)
+    input: combined.expand  # ATTN.1: why separate handling of input in rules
+                            # all and combine
 
 
 rule simulate:
-    output:
-        f"csv/{racer.wildcard_pattern}.csv"
-    params:
-        simulation=racer.instance
+    output: timing()
     shell:
-        "cp {params.simulation.racer}_{params.simulation.game}.csv {output}"
+        "cp {wildcards.racer}_{wildcards.game}.csv {output}"
 
 
 rule combine:
-    input:
-        expand("csv/{params}.csv", params=racer.instance_patterns)
-    output:
-        f"combined_csv/{game.wildcard_pattern}.csv"
-    params:
-        simulation=game.instance
+    input: timing
+    output: combined()     # ATTN.2: why can output be specified as a function
+                           # returning list of strings just like input
     run:
         print(input)
         print(output)
-        df = pd.concat([pd.read_csv(in_for_hare),
-                        pd.read_csv(in_for_tortoise)],
-                       keys = ['hare', 'tortoise'],
+        df = pd.concat([pd.read_csv(x) for x in input],
+                       keys = ['tortoise', 'hare'],
                        names = ['racer'])
-        df.to_csv(output)
+        df.to_csv(output[0])
