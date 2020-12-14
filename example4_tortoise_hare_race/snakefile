@@ -26,7 +26,7 @@ rule simulate:
 
 rule combine:
     input: timing
-    output: combined()     # ATTN.2: why can output be specified as a function
+    output: combined()     # ATTN.2: why can output not be specified as a function
                            # returning list of strings just like input
     run:
         print(input)
