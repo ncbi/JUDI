@@ -11,7 +11,7 @@ racer = Paramspace(
 
 rule all:
     input:
-        expand("combined_csv/{params}.csv", params=game.instance_patterns)
+        expand("combined_csv/{game}.csv", game=racer["game"])
 
 
 rule simulate:
@@ -30,7 +30,7 @@ rule combine:
         # lambda expressions, which are evaluated for each job.
         lambda wildcards: expand("csv/{params}.csv", params=racer.loc[int(wildcards.game)].instance_patterns)
     output:
-        f"combined_csv/{game}.csv"
+        "combined_csv/{game}.csv"
     run:
         print(input)
         print(output)
