@@ -7,7 +7,7 @@ REF = 'hg_refs/hg19.fa'
 path_gen = lambda x: '{}_{}.fq'.format(x['sample'],x['group'])
 
 class AlignFastq(Task):
-  inputs = {'reads': File('orig_fastq', path = path_gen)}
+  inputs = {'reads': File('orig_fastq', root = '.', path = path_gen)}
   targets = {'sai': File('aln.sai')}
   actions = [('bwa aln {} {} > {}', [REF,'$reads','$sai'])]
 

@@ -6,7 +6,7 @@ class ParamDb(object):
     self.name = name
     self.df = pd.DataFrame({'JUDI': ['*']})
 
-  def add_param(self, param_info, name=None):
+  def add_param(self, param_info, name=None, how='inner'):
     if isinstance(param_info, list):
       param_info = {name: param_info}
     if isinstance(param_info, dict):
@@ -16,7 +16,11 @@ class ParamDb(object):
     if not isinstance(param_info, pd.DataFrame):
       print("Error! input data must be a list, series or dataframe!!!")
       return 1
-    self.df = self.df.assign(key=1).merge(param_info.assign(key=1), on='key', how='outer').drop('key', 1)
+    if set(self.df.columns) & set(param_info):
+      # has common parameters
+      self.df = self.df.merge(param_info, how=how)
+    else:
+      self.df = self.df.assign(key=1).merge(param_info.assign(key=1), on='key', how='outer').drop('key', axis=1)
 
   def copy(self, name=''):
     other = ParamDb(name)
@@ -26,10 +30,23 @@ class ParamDb(object):
   def mask(self, mask_cols):
     self.df = self.df.drop(mask_cols, 1).drop_duplicates()
 
+  def keep(self, keep_cols):
+    keep_cols.append('JUDI')
+    self.df = self.df[keep_cols].drop_duplicates()
+
+  def filter(self, name, values):
+    self.df = self.df[self.df[name].isin(values)]
+  
+  def query(self, q):
+    self.df.query(q, inplace=True)
+
+  def sort_columns(self, cols):
+    self.df = self.df.set_index(cols).sort_index().reset_index()
+
   def show(self):
     print(self.name, ':')
     if 'JUDI' in self.df.columns:
-      print(self.df.drop('JUDI', 1))
+      print(self.df.drop('JUDI', axis=1))
     else:
       print(self.df)
     
@@ -56,11 +73,19 @@ def add_param(param_info, name = None):
   JUDI_PARAM.add_param(param_info, name)
   return 0
 
+def remove_params(cols):
+  JUDI_PARAM.mask(cols)
 
-def show_param_db():
+def show_param_db(param_df = None):
   """Print the global parameter database
   """
-  JUDI_PARAM.show()
+  if param_df is None:
+    JUDI_PARAM.show()
+  else:
+    print(param_df)
+
+def filter_param_vals(param, values):
+  JUDI_PARAM.filter(param, values)
 
 
 def copy_param_db():
@@ -70,7 +95,7 @@ def copy_param_db():
 def mask_global_param_db(mask_cols):
   param = JUDI_PARAM.copy()
   masked = JUDI_PARAM.copy()
-  param_cols = list(set(param.columns) - set(mask_cols))
+  param_cols = list(set(param.df.columns) - set(mask_cols))
   param = param.drop(mask_cols, 1).drop_duplicates()
   masked = masked.drop(param_cols, 1).drop_duplicates()
   return(param, masked)
